@@ -383,7 +383,7 @@ dependencies = [
  "derive_more",
  "futures",
  "log",
- "mcp_rust_sdk",
+ "mcp_sdk_rs",
  "serde",
  "serde_json",
  "tokio",
@@ -1047,9 +1047,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04cbf5b083de1c7e0222a7a51dbfdba1cbe1c6ab0b15e29fff3f6c077fd9cd9f"
 
 [[package]]
-name = "mcp_rust_sdk"
+name = "mcp_sdk_rs"
 version = "0.1.1"
-source = "git+https://github.com/jgmartin/mcp-rust-sdk.git#473650ee6253b48e83f42dc5d9c34ab2b9a24086"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e22d6d4074a068a1bd05075f2ab2082d688bfeaef0c824c30b83a72676c3992"
 dependencies = [
  "async-trait",
  "base64",

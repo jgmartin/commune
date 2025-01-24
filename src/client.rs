@@ -2,7 +2,7 @@ use crate::{
     error::Error,
     peer::{Peer, PeerBuilder, PeerPrompt, PeerResource, PeerTool},
 };
-use mcp_rust_sdk::types::ClientCapabilities;
+use mcp_sdk_rs::types::ClientCapabilities;
 use serde_json::json;
 use std::collections::HashMap;
 

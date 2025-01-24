@@ -1,6 +1,6 @@
 use crate::{error::Error, peer::Peer};
 use async_trait::async_trait;
-use mcp_rust_sdk::{
+use mcp_sdk_rs::{
     error::Error as McpError,
     server::{Server as McpServer, ServerHandler},
     transport::websocket::WebSocketTransport,
