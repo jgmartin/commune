@@ -1,7 +1,7 @@
 use crate::error::Error;
 use aws_sdk_bedrockruntime::types::{ToolInputSchema, ToolSpecification};
 use aws_smithy_types::Document;
-use mcp_rust_sdk::{
+use mcp_sdk_rs::{
     client::{Client as McpClient, Session},
     transport::{websocket::WebSocketTransport, Message},
     types::ServerCapabilities,
