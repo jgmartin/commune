@@ -5,7 +5,7 @@ use mcp_sdk_rs::{
     client::{Client as McpClient, Session},
     transport::{websocket::WebSocketTransport, Message},
     types::ServerCapabilities,
-    Implementation, Prompt, PromptMessage, Resource, ResourceContents, Tool,
+    Implementation, Prompt, PromptMessage, Resource, ResourceContents, ResourceTemplate, Tool,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -147,8 +147,28 @@ impl Peer {
         }
     }
     /// List resource templates
-    pub async fn list_resource_templates(&self) -> Result<(), Error> {
-        todo!("impl list_resource_templates()")
+    pub async fn list_resource_templates(&self) -> Result<Vec<ResourceTemplate>, Error> {
+        if self.capabilities.resources.is_some() {
+            if let Some(c) = &self.client {
+                let value = c
+                    .request("resources/templates/list", None)
+                    .await
+                    .map_err(|_| Error::McpClient)?;
+                let template_obj: HashMap<String, Value> =
+                    serde_json::from_value(value).map_err(|_| Error::InvalidResponse)?;
+                if let Some(val) = template_obj.get("resourceTemplates") {
+                    let contents: Vec<ResourceTemplate> =
+                        serde_json::from_value(val.clone()).map_err(|_| Error::InvalidResponse)?;
+                    Ok(contents)
+                } else {
+                    Ok(vec![])
+                }
+            } else {
+                Err(Error::UninitializedClient)
+            }
+        } else {
+            Err(Error::Unsupported)
+        }
     }
     /// Subscribe to resource update notifications
     pub async fn subscribe(&self, uri: &str) -> Result<(), Error> {
