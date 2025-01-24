@@ -1,6 +1,6 @@
 # Commune
 
-Commune is a Rust library designed to support the development of discoverable networks of AI agents. It serves as a thin wrapper over the [mcp_rust_sdk](https://github.com/jgmartin/mcp-rust-sdk), providing enhanced functionality for peer discovery and resource utilization within [Model Context Protocol (MCP)](https://spec.modelcontextprotocol.io/specification/2024-11-05/) networks.
+Commune is a Rust library designed to support the development of discoverable networks of AI agents. It serves as a wrapper over [mcp_sdk_rs](https://github.com/jgmartin/mcp-sdk-rs), providing enhanced functionality for peer discovery and resource utilization within [Model Context Protocol (MCP)](https://spec.modelcontextprotocol.io/specification/2024-11-05/) networks.
 
 ## Features
 
