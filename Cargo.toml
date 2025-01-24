@@ -2,16 +2,21 @@
 name = "commune"
 version = "0.1.0"
 edition = "2021"
+description = "Rust client and server for building discoverable Model Context Protocol (MCP) networks"
+license = "MIT"
+repository = "https://github.com/jgmartin/commune"
+documentation = "https://github.com/jgmartin/commune"
+keywords = ["mcp", "sdk", "protocol", "machine-learning", "ai"]
 
 [dependencies]
+derive_more = { version = "1.0.0", features = ["full"] }
 async-trait = "0.1.85"
 aws-sdk-bedrockruntime = "1.69.0"
 aws-smithy-types = "1.2.12"
-derive_more = "1.0.0"
 futures = "0.3.31"
 log = "0.4.25"
-# mcp_rust_sdk = { git = "https://github.com/jgmartin/mcp-rust-sdk.git" }
-mcp_rust_sdk = { path = "../../mcp-rust-sdk" }
+mcp_rust_sdk = { git = "https://github.com/jgmartin/mcp-rust-sdk.git" }
+# mcp_rust_sdk = { path = "../mcp-rust-sdk" }
 serde = "1.0.217"
 serde_json = "1.0.135"
 tokio = { version = "1.43.0", features = ["full"] }

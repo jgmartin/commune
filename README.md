@@ -25,33 +25,46 @@ use commune::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let peer = PeerBuilder::new()
+    // Create a peer for each MCP server
+    let peer1 = PeerBuilder::new()
         .with_name("everything".to_string())
         .with_url("ws://localhost:8780".to_string())
         .with_description("various example resources".to_string())
         .build()
         .await?;
-
-    let commune_client = ClientBuilder::new()
-        .with_name("zdi-commune".to_string())
-        .with_peers(vec![peer])
+    let peer2 = PeerBuilder::new()
+        .with_name("memory".to_string())
+        .with_url("ws://localhost:8781".to_string())
+        .with_description("memory based on a knowledge graph".to_string())
         .build()
         .await?;
 
-    println!("Calling all_tools()");
+    // Optionally create a commune client
+    let commune_client = ClientBuilder::new()
+        .with_peers(vec![peer1.clone(), peer2])
+        .build()
+        .await?;
+
+    // Use the client to aggregate resources
+    // Get all tools
     let peer_tools = commune_client.all_tools().await?;
-    println!("Available tools: {:?}", peer_tools);
+    log::info!("found {} tools", peer_tools.len());
+
+    // Get all resources
+    let peer_resources = commune_client.all_resources().await?;
+    log::info!("found {} resources!", peer_resources.len());
+
+    // Get all prompts
+    let peer_prompts = commune_client.all_prompts().await?;
+    log::info!("found {} prompts!", peer_prompts.len());
+
+    // Use peers to utilize them, subscribe to notifications etc
+    // Subscribe to resource updates
+    peer1.subscribe("test://static/resource/2").await?;
 
     Ok(())
 }
 ```
-
-This example demonstrates:
-1. Creating a new peer using `PeerBuilder`
-2. Creating a Commune client using `ClientBuilder`
-3. Adding the peer to the client
-4. Retrieving all available tools from the list of peers
-
 ## Type Conversion
 
 Commune provides convenient type conversion implementations for various inference APIs, including:
