@@ -54,6 +54,12 @@ impl PeerBuilder {
             .initialize(implementation, None)
             .await
             .map_err(|_| Error::ClientInitialization)?;
+        log::debug!(
+            "connected to peer '{}' @ {}; capabilities: {:?}",
+            self.name,
+            self.url,
+            caps
+        );
         Ok(Peer {
             name: self.name,
             url: self.url,
