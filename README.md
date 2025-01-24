@@ -15,7 +15,7 @@ Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-commune = "0.1.0"
+commune = { package = "mcp-commune", version = "0.1.0" }
 ```
 
 ## Usage
