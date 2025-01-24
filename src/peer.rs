@@ -5,7 +5,8 @@ use mcp_sdk_rs::{
     client::{Client as McpClient, Session},
     transport::{websocket::WebSocketTransport, Message},
     types::ServerCapabilities,
-    Implementation, Prompt, PromptMessage, Resource, ResourceContents, ResourceTemplate, Tool,
+    Implementation, LoggingLevel, Prompt, PromptMessage, Resource, ResourceContents,
+    ResourceTemplate, Tool,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -222,6 +223,18 @@ impl Peer {
         }
     }
 
+    pub async fn set_log_level(&self, level: LoggingLevel) -> Result<(), Error> {
+        if self.capabilities.logging.is_some() {
+            if let Some(c) = &self.client {
+                c.set_log_level(level).await.map_err(|_| Error::McpClient)
+            } else {
+                Err(Error::UninitializedClient)
+            }
+        } else {
+            Err(Error::Unsupported)
+        }
+    }
+
     /// Perform a paginated request
     async fn paginated_request(&self, thing: &str) -> Result<Vec<Value>, Error> {
         if let Some(client) = &self.client {
@@ -235,8 +248,8 @@ impl Peer {
             let resp_obj: HashMap<String, Value> =
                 serde_json::from_value(value).map_err(|_| Error::InvalidResponse)?;
             if let Some(val) = resp_obj.get(thing) {
-                if let Some(mut arr) = val.clone().as_array_mut() {
-                    res.append(&mut arr);
+                if let Some(arr) = val.clone().as_array_mut() {
+                    res.append(arr);
                 }
                 if let Some(nc_val) = resp_obj.get("nextCursor") {
                     if let Some(nc) = nc_val.as_str() {
@@ -252,8 +265,8 @@ impl Peer {
                 let resp_obj: HashMap<String, Value> =
                     serde_json::from_value(value).map_err(|_| Error::InvalidResponse)?;
                 if let Some(val) = resp_obj.get(thing) {
-                    if let Some(mut arr) = val.clone().as_array_mut() {
-                        res.append(&mut arr);
+                    if let Some(arr) = val.clone().as_array_mut() {
+                        res.append(arr);
                     }
                     if let Some(nc_val) = resp_obj.get("nextCursor") {
                         if let Some(nc) = nc_val.as_str() {
