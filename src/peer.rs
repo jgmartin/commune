@@ -108,7 +108,8 @@ impl Peer {
                     })),
                 )
                 .await
-                .map_err(|_| Error::McpClient)
+                .map_err(|e| Error::McpClient(format!("{e}")))
+                // .map_err(|_| Error::McpClient)
             } else {
                 Err(Error::UninitializedClient)
             }
@@ -136,7 +137,7 @@ impl Peer {
                 let value = c
                     .request("resources/read", Some(json!({"uri": uri})))
                     .await
-                    .map_err(|_| Error::McpClient)?;
+                    .map_err(|_| Error::McpClient("failed to read resource".to_string()))?;
                 let resource_obj: HashMap<String, Value> =
                     serde_json::from_value(value).map_err(|_| Error::InvalidResponse)?;
                 if let Some(val) = resource_obj.get("contents") {
@@ -160,7 +161,7 @@ impl Peer {
                 let value = c
                     .request("resources/templates/list", None)
                     .await
-                    .map_err(|_| Error::McpClient)?;
+                    .map_err(|_| Error::McpClient("failed to list templates".to_string()))?;
                 let template_obj: HashMap<String, Value> =
                     serde_json::from_value(value).map_err(|_| Error::InvalidResponse)?;
                 if let Some(val) = template_obj.get("resourceTemplates") {
@@ -180,7 +181,9 @@ impl Peer {
     /// Subscribe to resource update notifications
     pub async fn subscribe(&self, uri: &str) -> Result<(), Error> {
         if let Some(c) = &self.client {
-            c.subscribe(uri).await.map_err(|_| Error::McpClient)?;
+            c.subscribe(uri).await.map_err(|_| {
+                Error::McpClient("failed to subscribe to update notifications".to_string())
+            })?;
         }
         Ok(())
     }
@@ -211,7 +214,7 @@ impl Peer {
                         Some(json!({"name": name, "arguments": args})),
                     )
                     .await
-                    .map_err(|_| Error::McpClient)?;
+                    .map_err(|_| Error::McpClient("failed to get prompt".to_string()))?;
                 let prompt_obj: HashMap<String, Value> =
                     serde_json::from_value(value).map_err(|_| Error::InvalidResponse)?;
                 if let Some(val) = prompt_obj.get("messages") {
@@ -232,7 +235,9 @@ impl Peer {
     pub async fn set_log_level(&self, level: LoggingLevel) -> Result<(), Error> {
         if self.capabilities.logging.is_some() {
             if let Some(c) = &self.client {
-                c.set_log_level(level).await.map_err(|_| Error::McpClient)
+                c.set_log_level(level)
+                    .await
+                    .map_err(|_| Error::McpClient("failed to set log level".to_string()))
             } else {
                 Err(Error::UninitializedClient)
             }
@@ -250,7 +255,7 @@ impl Peer {
             let value = client
                 .request(path.as_str(), None)
                 .await
-                .map_err(|_| Error::McpClient)?;
+                .map_err(|_| Error::McpClient("failed to perform paginated request".to_string()))?;
             let resp_obj: HashMap<String, Value> =
                 serde_json::from_value(value).map_err(|_| Error::InvalidResponse)?;
             if let Some(val) = resp_obj.get(thing) {
@@ -267,7 +272,9 @@ impl Peer {
                 let value = client
                     .request(path.as_str(), Some(json!({ "cursor": c })))
                     .await
-                    .map_err(|_| Error::McpClient)?;
+                    .map_err(|_| {
+                        Error::McpClient("failed to perform paginated request".to_string())
+                    })?;
                 let resp_obj: HashMap<String, Value> =
                     serde_json::from_value(value).map_err(|_| Error::InvalidResponse)?;
                 if let Some(val) = resp_obj.get(thing) {
@@ -298,18 +305,19 @@ impl PartialEq for Peer {
     }
 }
 
-pub struct PeerTool<'a> {
-    pub peer: &'a Peer,
+#[derive(Clone)]
+pub struct PeerTool {
+    pub peer: Peer,
     pub tool: Tool,
 }
 
-impl<'a> fmt::Display for PeerTool<'a> {
+impl fmt::Display for PeerTool {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.tool.description)
     }
 }
 
-impl<'a> From<PeerTool<'a>> for ToolSpecification {
+impl From<PeerTool> for ToolSpecification {
     fn from(pt: PeerTool) -> ToolSpecification {
         let mut properties = HashMap::new();
         if let Some(p) = pt.tool.schema.get("properties") {
@@ -361,23 +369,23 @@ impl<'a> From<PeerTool<'a>> for ToolSpecification {
     }
 }
 
-pub struct PeerResource<'a> {
-    pub peer: &'a Peer,
+pub struct PeerResource {
+    pub peer: Peer,
     pub resource: Resource,
 }
 
-impl<'a> fmt::Display for PeerResource<'a> {
+impl fmt::Display for PeerResource {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.resource.name)
     }
 }
 
-pub struct PeerPrompt<'a> {
-    pub peer: &'a Peer,
+pub struct PeerPrompt {
+    pub peer: Peer,
     pub prompt: Prompt,
 }
 
-impl<'a> fmt::Display for PeerPrompt<'a> {
+impl fmt::Display for PeerPrompt {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.prompt.name)
     }
