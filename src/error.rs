@@ -1,7 +1,7 @@
-use derive_more::{Display, Error as OtherError};
+use derive_more::Display;
 
 /// Error types
-#[derive(Debug, Display, OtherError)]
+#[derive(Debug, Display)]
 pub enum Error {
     #[display("internal server error")]
     Internal,
@@ -10,7 +10,7 @@ pub enum Error {
     #[display("uninitialized client")]
     UninitializedClient,
     #[display("mcp client error")]
-    McpClient,
+    McpClient(String),
     #[display("invalid response")]
     InvalidResponse,
     #[display("serialization error")]
@@ -18,3 +18,4 @@ pub enum Error {
     #[display("client initialization error")]
     ClientInitialization,
 }
+impl std::error::Error for Error {}
