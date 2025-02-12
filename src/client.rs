@@ -46,10 +46,6 @@ impl ClientBuilder {
     /// # Errors
     /// Returns an error if the peer list is empty or if there's an issue retrieving peers.
     pub async fn build(self) -> Result<Client, Error> {
-        // if self.peers.is_empty() {
-        //     log::error!("error: peer list cannot be empty");
-        //     return Err(Error::Internal);
-        // }
         Ok(Client {
             peers: self.get_peers().await?,
         })
