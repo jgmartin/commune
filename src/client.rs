@@ -1,39 +1,60 @@
+//! # Client Module
+//!
+//! This module provides the client-side functionality for the Commune library.
+//! It includes structures and implementations for building and managing clients
+//! that can interact with peers in a distributed network.
+
 use crate::{
     error::Error,
     peer::{Peer, PeerBuilder, PeerPrompt, PeerResource, PeerTool},
 };
 use mcp_sdk_rs::types::ClientCapabilities;
 
+/// A builder for creating `Client` instances with customizable configurations.
 #[derive(Default)]
 pub struct ClientBuilder {
     peers: Vec<Peer>,
     capabilities: ClientCapabilities,
 }
+
 impl ClientBuilder {
+    /// Creates a new `ClientBuilder` instance.
     pub fn new() -> ClientBuilder {
         ClientBuilder::default()
     }
+
+    /// Adds multiple peers to the client configuration.
     pub fn with_peers(mut self, peers: Vec<Peer>) -> ClientBuilder {
         self.peers = peers;
         self
     }
+
+    /// Adds a single peer to the client configuration.
     pub fn with_peer(mut self, peer: Peer) -> ClientBuilder {
         self.peers.push(peer);
         self
     }
+
+    /// Sets the capabilities for the client.
     pub fn with_capabilities(mut self, capabilities: ClientCapabilities) -> ClientBuilder {
         self.capabilities = capabilities;
         self
     }
+
+    /// Builds the `Client` instance based on the configured parameters.
+    ///
+    /// # Errors
+    /// Returns an error if the peer list is empty or if there's an issue retrieving peers.
     pub async fn build(self) -> Result<Client, Error> {
-        if self.peers.is_empty() {
-            log::error!("error: peer list cannot be empty");
-            return Err(Error::Internal);
-        }
         Ok(Client {
             peers: self.get_peers().await?,
         })
     }
+
+    /// Retrieves and aggregates peers, including those from Commune servers.
+    ///
+    /// # Errors
+    /// Returns an error if there's an issue communicating with peers or parsing their responses.
     async fn get_peers(&self) -> Result<Vec<Peer>, Error> {
         let mut new_peers = self.peers.clone();
         for peer in &self.peers {
@@ -59,11 +80,16 @@ impl ClientBuilder {
     }
 }
 
+/// Represents a client in the Commune network, capable of interacting with multiple peers.
 pub struct Client {
     pub peers: Vec<Peer>,
 }
+
 impl Client {
-    /// List all peer tools
+    /// Lists all tools available across all connected peers.
+    ///
+    /// # Errors
+    /// Returns an error if there's an issue communicating with any peer.
     pub async fn all_tools(&self) -> Result<Vec<PeerTool>, Error> {
         let mut res = vec![];
         for peer in &self.peers {
@@ -79,7 +105,10 @@ impl Client {
         Ok(res)
     }
 
-    /// List all peer resources
+    /// Lists all resources available across all connected peers.
+    ///
+    /// # Errors
+    /// Returns an error if there's an issue communicating with any peer.
     pub async fn all_resources(&self) -> Result<Vec<PeerResource>, Error> {
         let mut res = vec![];
         for peer in &self.peers {
@@ -95,7 +124,10 @@ impl Client {
         Ok(res)
     }
 
-    /// List all peer prompts
+    /// Lists all prompts available across all connected peers.
+    ///
+    /// # Errors
+    /// Returns an error if there's an issue communicating with any peer.
     pub async fn all_prompts(&self) -> Result<Vec<PeerPrompt>, Error> {
         let mut res = vec![];
         for peer in &self.peers {

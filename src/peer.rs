@@ -109,7 +109,6 @@ impl Peer {
                 )
                 .await
                 .map_err(|e| Error::McpClient(format!("{e}")))
-                // .map_err(|_| Error::McpClient)
             } else {
                 Err(Error::UninitializedClient)
             }
