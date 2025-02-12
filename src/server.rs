@@ -1,3 +1,8 @@
+//! Server module for the Commune project.
+//!
+//! This module provides the implementation of the Commune server, including
+//! the server builder, the main server struct, and the handler for WebSocket connections.
+
 use crate::{error::Error, peer::Peer};
 use async_trait::async_trait;
 use mcp_sdk_rs::{
@@ -12,6 +17,7 @@ use std::sync::Arc;
 use tokio::net::TcpListener;
 use tokio_tungstenite::accept_async;
 
+/// Builder for creating a Commune server with customizable components.
 #[derive(Default)]
 pub struct ServerBuilder {
     peers: Vec<Peer>,
@@ -19,47 +25,70 @@ pub struct ServerBuilder {
     resources: Vec<Resource>,
     tools: Vec<Tool>,
 }
+
 impl ServerBuilder {
+    /// Creates a new ServerBuilder with default values.
     pub fn new() -> ServerBuilder {
         ServerBuilder {
             ..Default::default()
         }
     }
+
+    /// Adds multiple peers to the server.
     pub fn with_peers(mut self, peers: Vec<Peer>) -> ServerBuilder {
         self.peers = peers;
         self
     }
+
+    /// Adds a single peer to the server.
     pub fn with_peer(mut self, peer: Peer) -> ServerBuilder {
         self.peers.push(peer);
         self
     }
+
+    /// Adds a single prompt to the server.
     pub fn with_prompt(mut self, prompt: Prompt) -> ServerBuilder {
         self.prompts.push(prompt);
         self
     }
+
+    /// Adds multiple prompts to the server.
     pub fn with_prompts(mut self, prompts: Vec<Prompt>) -> ServerBuilder {
         self.prompts = prompts;
         self
     }
+
+    /// Adds a single resource to the server.
     pub fn with_resource(mut self, resource: Resource) -> ServerBuilder {
         self.resources.push(resource);
         self
     }
+
+    /// Adds multiple resources to the server.
     pub fn with_resources(mut self, resources: Vec<Resource>) -> ServerBuilder {
         self.resources = resources;
         self
     }
+
+    /// Adds a single tool to the server.
     pub fn with_tool(mut self, tool: Tool) -> ServerBuilder {
         self.tools.push(tool);
         self
     }
+
+    /// Adds multiple tools to the server.
     pub fn with_tools(mut self, tools: Vec<Tool>) -> ServerBuilder {
         self.tools = tools;
         self
     }
+
+    /// Builds the server with the configured components.
+    ///
+    /// # Returns
+    /// A `Result` containing either the built `Server` or an `Error`.
     pub async fn build(self) -> Result<Server, Error> {
         let mut caps = ServerCapabilities::default();
-        // caps['experimental']['peers'] = Some({}), Some(json!({"listChanged": true})) or None
+        // Set up server capabilities based on the presence of different components
         if !self.peers.is_empty() {
             caps.experimental = Some(json!({"peers": {}}));
         }
@@ -82,6 +111,7 @@ impl ServerBuilder {
     }
 }
 
+/// The main Server struct representing a Commune server instance.
 pub struct Server {
     pub capabilities: ServerCapabilities,
     pub peers: Vec<Peer>,
@@ -89,15 +119,21 @@ pub struct Server {
     pub resources: Vec<Resource>,
     pub tools: Vec<Tool>,
 }
+
 impl Server {
-    /// Start a server and listen for requests
+    /// Starts the server and listens for incoming WebSocket connections.
+    ///
+    /// # Arguments
+    /// * `addr` - A string slice that holds the address to bind the server to.
+    ///
+    /// # Returns
+    /// A `Result` indicating success or containing an `Error`.
     pub async fn start(&self, addr: &str) -> Result<(), Error> {
         let listener = TcpListener::bind(addr).await.map_err(|_| Error::Internal)?;
         println!("WebSocket server listening on ws://{}", addr);
-        // Accept and handle incoming connections
+
         while let Ok((stream, addr)) = listener.accept().await {
             println!("New connection from: {}", addr);
-            // Create WebSocket stream from TCP connection
             let ws_stream = accept_async(stream)
                 .await
                 .map_err(|e| {
@@ -106,9 +142,7 @@ impl Server {
                 })
                 .unwrap();
 
-            // Create WebSocket transport from the accepted stream
             let transport = WebSocketTransport::from_stream(ws_stream);
-            // Create MCP server with the transport and handler
             let handler = CommuneHandler {
                 peers: self.peers.clone(),
                 prompts: self.prompts.clone(),
@@ -117,7 +151,6 @@ impl Server {
             };
             let server = McpServer::new(Arc::new(transport), Arc::new(handler));
 
-            // Handle this connection in a new task
             tokio::spawn(async move {
                 println!("Starting server for connection from {}", addr);
                 if let Err(e) = server.start().await {
@@ -130,14 +163,24 @@ impl Server {
     }
 }
 
+/// Handler for Commune server requests.
 struct CommuneHandler {
     peers: Vec<Peer>,
     prompts: Vec<Prompt>,
     tools: Vec<Tool>,
     resources: Vec<Resource>,
 }
+
 #[async_trait]
 impl ServerHandler for CommuneHandler {
+    /// Initializes the connection with a client.
+    ///
+    /// # Arguments
+    /// * `implementation` - The client implementation details.
+    /// * `_capabilities` - The client's capabilities (currently unused).
+    ///
+    /// # Returns
+    /// A `Result` containing either the `ServerCapabilities` or an `McpError`.
     async fn initialize(
         &self,
         implementation: Implementation,
@@ -150,6 +193,14 @@ impl ServerHandler for CommuneHandler {
         Ok(ServerCapabilities::default())
     }
 
+    /// Handles incoming method calls from clients.
+    ///
+    /// # Arguments
+    /// * `method` - A string slice containing the method name.
+    /// * `_params` - An optional `Value` containing the method parameters.
+    ///
+    /// # Returns
+    /// A `Result` containing either the method result as a `Value` or an `McpError`.
     async fn handle_method(&self, method: &str, _params: Option<Value>) -> Result<Value, McpError> {
         match method {
             "peers/list" => Ok(serde_json::to_value(ListPeersResult {
@@ -160,31 +211,6 @@ impl ServerHandler for CommuneHandler {
                 prompts: self.prompts.clone(),
                 next_cursor: None,
             })?),
-            // "prompts/get" => {
-            //     if let Some(p) = params {
-            //         let req: GetPromptRequest = serde_json::from_value(p)?;
-            //         if let Some(p) = self.prompts.iter().find(|r| r.name == req.name) {
-            //             Ok(serde_json::to_value(GetPromptResult {
-            //                 description: p.description,
-            //                 messages: p.messages,
-            //             })?)
-            //         } else {
-            //             let e = McpError::Protocol {
-            //                 code: ErrorCode::RequestFailed,
-            //                 message: "prompt not found".to_string(),
-            //                 data: None,
-            //             };
-            //             Err(e)
-            //         }
-            //     } else {
-            //         let e = McpError::Protocol {
-            //             code: ErrorCode::InvalidRequest,
-            //             message: "invalid request".to_string(),
-            //             data: None,
-            //         };
-            //         Err(e)
-            //     }
-            // }
             "tools/list" => Ok(serde_json::to_value(ListToolsResult {
                 tools: self.tools.clone(),
                 next_cursor: None,
@@ -197,20 +223,24 @@ impl ServerHandler for CommuneHandler {
         }
     }
 
+    /// Handles the shutdown request from a client.
+    ///
+    /// # Returns
+    /// A `Result` indicating success or containing an `McpError`.
     async fn shutdown(&self) -> Result<(), McpError> {
         println!("Server shutting down");
         Ok(())
     }
 }
 
-/// /peers/list request
+/// Request structure for the /peers/list method.
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ListPeersRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cursor: Option<Cursor>,
 }
 
-/// /peers/list response
+/// Response structure for the /peers/list method.
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ListPeersResult {
     pub peers: Vec<Peer>,
