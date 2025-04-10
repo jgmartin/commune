@@ -1,6 +1,6 @@
 [package]
 name = "mcp-commune"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 description = "Rust client and server for building discoverable Model Context Protocol (MCP) networks"
 license = "MIT"
