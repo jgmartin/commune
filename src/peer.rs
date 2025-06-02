@@ -304,20 +304,43 @@ impl PartialEq for Peer {
     }
 }
 
-#[derive(Clone)]
-pub struct PeerTool {
+pub struct PeerResource {
     pub peer: Peer,
+    pub resource: Resource,
+}
+
+impl fmt::Display for PeerResource {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.resource.name)
+    }
+}
+
+pub struct PeerPrompt {
+    pub peer: Peer,
+    pub prompt: Prompt,
+}
+
+impl fmt::Display for PeerPrompt {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.prompt.name)
+    }
+}
+
+/// A locally defined tool
+#[derive(Clone)]
+pub struct LocalTool {
+    pub executor: fn(Value) -> Result<Value, Error>,
     pub tool: Tool,
 }
 
-impl fmt::Display for PeerTool {
+impl fmt::Display for LocalTool {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.tool.description)
     }
 }
 
-impl From<PeerTool> for ToolSpecification {
-    fn from(pt: PeerTool) -> ToolSpecification {
+impl From<LocalTool> for ToolSpecification {
+    fn from(pt: LocalTool) -> ToolSpecification {
         let mut properties = HashMap::new();
         if let Some(p) = pt.tool.schema.get("properties") {
             if let Some(args_obj) = p.as_object() {
@@ -365,27 +388,5 @@ impl From<PeerTool> for ToolSpecification {
             .set_input_schema(Some(ToolInputSchema::Json(input_schema_doc)))
             .build()
             .expect("a valid tool specification")
-    }
-}
-
-pub struct PeerResource {
-    pub peer: Peer,
-    pub resource: Resource,
-}
-
-impl fmt::Display for PeerResource {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.resource.name)
-    }
-}
-
-pub struct PeerPrompt {
-    pub peer: Peer,
-    pub prompt: Prompt,
-}
-
-impl fmt::Display for PeerPrompt {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.prompt.name)
     }
 }

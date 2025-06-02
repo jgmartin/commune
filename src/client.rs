@@ -6,7 +6,8 @@
 
 use crate::{
     error::Error,
-    peer::{Peer, PeerBuilder, PeerPrompt, PeerResource, PeerTool},
+    peer::{Peer, PeerBuilder, PeerPrompt, PeerResource},
+    tool::Tool,
 };
 use mcp_sdk_rs::types::ClientCapabilities;
 
@@ -14,6 +15,7 @@ use mcp_sdk_rs::types::ClientCapabilities;
 #[derive(Default)]
 pub struct ClientBuilder {
     peers: Vec<Peer>,
+    tools: Vec<Tool>,
     capabilities: ClientCapabilities,
 }
 
@@ -35,6 +37,20 @@ impl ClientBuilder {
         self
     }
 
+    /// Adds multiple tools to the client configuration.
+    /// Use this to add local tools.
+    pub fn with_tools(mut self, tools: Vec<Tool>) -> ClientBuilder {
+        self.tools = tools;
+        self
+    }
+
+    /// Adds a single tool to the client configuration.
+    /// Use this to add a local tool.
+    pub fn with_tool(mut self, tool: Tool) -> ClientBuilder {
+        self.tools.push(tool);
+        self
+    }
+
     /// Sets the capabilities for the client.
     pub fn with_capabilities(mut self, capabilities: ClientCapabilities) -> ClientBuilder {
         self.capabilities = capabilities;
@@ -48,6 +64,7 @@ impl ClientBuilder {
     pub async fn build(self) -> Result<Client, Error> {
         Ok(Client {
             peers: self.get_peers().await?,
+            local_tools: self.tools,
         })
     }
 
@@ -83,6 +100,7 @@ impl ClientBuilder {
 /// Represents a client in the Commune network, capable of interacting with multiple peers.
 pub struct Client {
     pub peers: Vec<Peer>,
+    pub local_tools: Vec<Tool>,
 }
 
 impl Client {
@@ -90,12 +108,12 @@ impl Client {
     ///
     /// # Errors
     /// Returns an error if there's an issue communicating with any peer.
-    pub async fn all_tools(&self) -> Result<Vec<PeerTool>, Error> {
-        let mut res = vec![];
+    pub async fn all_tools(&self) -> Result<Vec<Tool>, Error> {
+        let mut res = self.local_tools.clone();
         for peer in &self.peers {
             if peer.capabilities.tools.is_some() {
                 for tool in peer.list_tools().await? {
-                    res.push(PeerTool {
+                    res.push(Tool::Remote {
                         peer: peer.clone(),
                         tool,
                     })
