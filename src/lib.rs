@@ -21,6 +21,9 @@ pub mod error;
 /// Peer management module
 pub mod peer;
 
+/// Functionality related to tool calling
+pub mod tool;
+
 /// Prelude module for convenient imports
 pub mod prelude;
 
