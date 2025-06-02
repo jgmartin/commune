@@ -1,7 +1,7 @@
 use crate::{error::Error, peer::Peer};
 use aws_sdk_bedrockruntime::types::{ToolInputSchema, ToolSpecification};
 use aws_smithy_types::Document;
-use mcp_sdk_rs::Tool as McpTool;
+pub use mcp_sdk_rs::Tool as McpTool;
 use serde_json::Value;
 use std::{collections::HashMap, fmt};
 
