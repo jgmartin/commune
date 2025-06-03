@@ -7,7 +7,7 @@ use std::{collections::HashMap, fmt};
 
 #[derive(Clone)]
 pub enum Executor {
-    Fn(fn(Option<Value>) -> Result<Value, Error>),
+    Fn(fn(Option<Value>) -> Result<String, Error>),
     Cmd {
         cmd: String,
         args: Option<Vec<String>>,
