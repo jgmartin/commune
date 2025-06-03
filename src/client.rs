@@ -27,7 +27,7 @@ impl ClientBuilder {
 
     /// Adds multiple peers to the client configuration.
     pub fn with_peers(mut self, peers: Vec<Peer>) -> ClientBuilder {
-        self.peers = peers;
+        self.peers.extend(peers);
         self
     }
 
@@ -40,7 +40,7 @@ impl ClientBuilder {
     /// Adds multiple tools to the client configuration.
     /// Use this to add local tools.
     pub fn with_tools(mut self, tools: Vec<Tool>) -> ClientBuilder {
-        self.tools = tools;
+        self.tools.extend(tools);
         self
     }
 

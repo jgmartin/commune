@@ -6,15 +6,18 @@ use serde_json::Value;
 use std::{collections::HashMap, fmt};
 
 #[derive(Clone)]
+pub enum Executor {
+    Fn(fn(Option<Value>) -> Result<Value, Error>),
+    Cmd {
+        cmd: String,
+        args: Option<Vec<String>>,
+    },
+}
+
+#[derive(Clone)]
 pub enum Tool {
-    Local {
-        executor: fn(Option<Value>) -> Result<Value, Error>,
-        tool: McpTool,
-    },
-    Remote {
-        peer: Peer,
-        tool: McpTool,
-    },
+    Local { executor: Executor, tool: McpTool },
+    Remote { peer: Peer, tool: McpTool },
 }
 impl fmt::Display for Tool {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
