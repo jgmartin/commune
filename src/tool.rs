@@ -37,24 +37,27 @@ impl From<Tool> for ToolSpecification {
             Tool::Remote { peer: _, tool } => {
                 name = tool.name.clone();
                 description = tool.description.clone();
-                if let Some(p) = tool.schema.get("properties") {
-                    if let Some(args_obj) = p.as_object() {
-                        for (arg_name, val) in args_obj {
-                            if let Some(schema_obj) = val.as_object() {
-                                properties
-                                    .insert(arg_name.clone(), Document::Object(HashMap::new()));
-                                for (_, val) in schema_obj {
-                                    if let Some(props_obj) = val.as_object() {
-                                        if let Some(t) = props_obj.get("type") {
-                                            if let Some(st) = t.as_str() {
-                                                if let Some(arg_props) =
-                                                    properties.get_mut(arg_name)
-                                                {
-                                                    if let Some(p) = arg_props.as_object_mut() {
-                                                        p.insert(
-                                                            "type".to_string(),
-                                                            Document::String(st.to_string()),
-                                                        );
+
+                if let Some(is) = tool.input_schema {
+                    if let Some(p) = is.properties {
+                        if let Some(args_obj) = p.as_object() {
+                            for (arg_name, val) in args_obj {
+                                if let Some(schema_obj) = val.as_object() {
+                                    properties
+                                        .insert(arg_name.clone(), Document::Object(HashMap::new()));
+                                    for (_, val) in schema_obj {
+                                        if let Some(props_obj) = val.as_object() {
+                                            if let Some(t) = props_obj.get("type") {
+                                                if let Some(st) = t.as_str() {
+                                                    if let Some(arg_props) =
+                                                        properties.get_mut(arg_name)
+                                                    {
+                                                        if let Some(p) = arg_props.as_object_mut() {
+                                                            p.insert(
+                                                                "type".to_string(),
+                                                                Document::String(st.to_string()),
+                                                            );
+                                                        }
                                                     }
                                                 }
                                             }
@@ -64,13 +67,9 @@ impl From<Tool> for ToolSpecification {
                             }
                         }
                     }
-                }
-                if let Some(r) = tool.schema.get("required") {
-                    if let Some(rv) = r.as_array() {
-                        for val in rv {
-                            if let Some(sv) = val.as_str() {
-                                required.push(Document::String(sv.to_string()))
-                            }
+                    if let Some(r) = is.required {
+                        for val in r {
+                            required.push(Document::String(val))
                         }
                     }
                 }
@@ -78,24 +77,26 @@ impl From<Tool> for ToolSpecification {
             Tool::Local { executor: _, tool } => {
                 name = tool.name.clone();
                 description = tool.description.clone();
-                if let Some(p) = tool.schema.get("properties") {
-                    if let Some(args_obj) = p.as_object() {
-                        for (arg_name, val) in args_obj {
-                            if let Some(schema_obj) = val.as_object() {
-                                properties
-                                    .insert(arg_name.clone(), Document::Object(HashMap::new()));
-                                for (_, val) in schema_obj {
-                                    if let Some(props_obj) = val.as_object() {
-                                        if let Some(t) = props_obj.get("type") {
-                                            if let Some(st) = t.as_str() {
-                                                if let Some(arg_props) =
-                                                    properties.get_mut(arg_name)
-                                                {
-                                                    if let Some(p) = arg_props.as_object_mut() {
-                                                        p.insert(
-                                                            "type".to_string(),
-                                                            Document::String(st.to_string()),
-                                                        );
+                if let Some(is) = tool.input_schema {
+                    if let Some(p) = is.properties {
+                        if let Some(args_obj) = p.as_object() {
+                            for (arg_name, val) in args_obj {
+                                if let Some(schema_obj) = val.as_object() {
+                                    properties
+                                        .insert(arg_name.clone(), Document::Object(HashMap::new()));
+                                    for (_, val) in schema_obj {
+                                        if let Some(props_obj) = val.as_object() {
+                                            if let Some(t) = props_obj.get("type") {
+                                                if let Some(st) = t.as_str() {
+                                                    if let Some(arg_props) =
+                                                        properties.get_mut(arg_name)
+                                                    {
+                                                        if let Some(p) = arg_props.as_object_mut() {
+                                                            p.insert(
+                                                                "type".to_string(),
+                                                                Document::String(st.to_string()),
+                                                            );
+                                                        }
                                                     }
                                                 }
                                             }
@@ -105,13 +106,9 @@ impl From<Tool> for ToolSpecification {
                             }
                         }
                     }
-                }
-                if let Some(r) = tool.schema.get("required") {
-                    if let Some(rv) = r.as_array() {
-                        for val in rv {
-                            if let Some(sv) = val.as_str() {
-                                required.push(Document::String(sv.to_string()))
-                            }
+                    if let Some(r) = is.required {
+                        for val in r {
+                            required.push(Document::String(val))
                         }
                     }
                 }

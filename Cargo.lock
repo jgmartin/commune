@@ -1031,7 +1031,7 @@ checksum = "04cbf5b083de1c7e0222a7a51dbfdba1cbe1c6ab0b15e29fff3f6c077fd9cd9f"
 
 [[package]]
 name = "mcp-commune"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "async-trait",
  "aws-sdk-bedrockruntime",
@@ -1048,9 +1048,9 @@ dependencies = [
 
 [[package]]
 name = "mcp-sdk-rs"
-version = "0.1.3"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7475da123277a36c5aeca735c892110fea2b857aa16272c1e73ec32d33ae5ef0"
+checksum = "33861fd919976477c0bb6aca80921e4b2b9ef2a1ba5de9b049d74cb45a164bd1"
 dependencies = [
  "async-trait",
  "base64",
