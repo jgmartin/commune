@@ -6,7 +6,7 @@
 
 use crate::{
     error::Error,
-    peer::{Peer, PeerBuilder, PeerPrompt, PeerResource},
+    peer::{Peer, PeerPrompt, PeerResource, RemotePeerBuilder},
     tool::Tool,
 };
 use mcp_sdk_rs::types::ClientCapabilities;
@@ -75,18 +75,59 @@ impl ClientBuilder {
     async fn get_peers(&self) -> Result<Vec<Peer>, Error> {
         let mut new_peers = self.peers.clone();
         for peer in &self.peers {
-            if let Some(ref client) = peer.client {
-                if let Some(ref caps) = peer.capabilities.experimental {
-                    if let Some(x) = caps.as_object() {
-                        if x.get("peers").is_some() {
-                            log::debug!("{} is a commune server, getting peers", peer.url);
-                            let r = client.request("peers/list", None).await.map_err(|_| {
-                                Error::McpClient("failed to list peers".to_string())
-                            })?;
-                            let remote_peers: Vec<PeerBuilder> =
-                                serde_json::from_value(r).map_err(|_| Error::InvalidResponse)?;
-                            for pb in remote_peers {
-                                new_peers.push(pb.build().await?);
+            match peer {
+                Peer::Local {
+                    name: _,
+                    description: _,
+                    cmd: _,
+                    args: _,
+                    env: _,
+                    capabilities,
+                    client,
+                } => {
+                    if let Some(ref client) = client {
+                        if let Some(ref caps) = capabilities.experimental {
+                            if let Some(x) = caps.as_object() {
+                                if x.get("peers").is_some() {
+                                    // log::debug!("{} is a commune server, getting peers", peer.url);
+                                    let r =
+                                        client.request("peers/list", None).await.map_err(|_| {
+                                            Error::McpClient("failed to list peers".to_string())
+                                        })?;
+                                    let remote_peers: Vec<RemotePeerBuilder> =
+                                        serde_json::from_value(r)
+                                            .map_err(|_| Error::InvalidResponse)?;
+                                    for pb in remote_peers {
+                                        new_peers.push(pb.build().await?);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Peer::Remote {
+                    name: _,
+                    description: _,
+                    url: _,
+                    capabilities,
+                    client,
+                } => {
+                    if let Some(ref client) = client {
+                        if let Some(ref caps) = capabilities.experimental {
+                            if let Some(x) = caps.as_object() {
+                                if x.get("peers").is_some() {
+                                    // log::debug!("{} is a commune server, getting peers", peer.url);
+                                    let r =
+                                        client.request("peers/list", None).await.map_err(|_| {
+                                            Error::McpClient("failed to list peers".to_string())
+                                        })?;
+                                    let remote_peers: Vec<RemotePeerBuilder> =
+                                        serde_json::from_value(r)
+                                            .map_err(|_| Error::InvalidResponse)?;
+                                    for pb in remote_peers {
+                                        new_peers.push(pb.build().await?);
+                                    }
+                                }
                             }
                         }
                     }
@@ -111,12 +152,41 @@ impl Client {
     pub async fn all_tools(&self) -> Result<Vec<Tool>, Error> {
         let mut res = self.local_tools.clone();
         for peer in &self.peers {
-            if peer.capabilities.tools.is_some() {
-                for tool in peer.list_tools().await? {
-                    res.push(Tool::Remote {
-                        peer: peer.clone(),
-                        tool,
-                    })
+            match peer {
+                Peer::Local {
+                    name: _,
+                    description: _,
+                    cmd: _,
+                    args: _,
+                    env: _,
+                    capabilities,
+                    client: _,
+                } => {
+                    if capabilities.tools.is_some() {
+                        for tool in peer.list_tools().await? {
+                            // local peers speak MCP protocol and, as such, their tools are implemented as Tool::Remote
+                            res.push(Tool::Remote {
+                                peer: peer.clone(),
+                                tool,
+                            })
+                        }
+                    }
+                }
+                Peer::Remote {
+                    name: _,
+                    description: _,
+                    url: _,
+                    capabilities,
+                    client: _,
+                } => {
+                    if capabilities.tools.is_some() {
+                        for tool in peer.list_tools().await? {
+                            res.push(Tool::Remote {
+                                peer: peer.clone(),
+                                tool,
+                            })
+                        }
+                    }
                 }
             }
         }
@@ -130,12 +200,40 @@ impl Client {
     pub async fn all_resources(&self) -> Result<Vec<PeerResource>, Error> {
         let mut res = vec![];
         for peer in &self.peers {
-            if peer.capabilities.resources.is_some() {
-                for resource in peer.list_resources().await? {
-                    res.push(PeerResource {
-                        peer: peer.clone(),
-                        resource,
-                    })
+            match peer {
+                Peer::Local {
+                    name: _,
+                    description: _,
+                    cmd: _,
+                    args: _,
+                    env: _,
+                    capabilities,
+                    client: _,
+                } => {
+                    if capabilities.resources.is_some() {
+                        for resource in peer.list_resources().await? {
+                            res.push(PeerResource {
+                                peer: peer.clone(),
+                                resource,
+                            })
+                        }
+                    }
+                }
+                Peer::Remote {
+                    name: _,
+                    description: _,
+                    url: _,
+                    capabilities,
+                    client: _,
+                } => {
+                    if capabilities.resources.is_some() {
+                        for resource in peer.list_resources().await? {
+                            res.push(PeerResource {
+                                peer: peer.clone(),
+                                resource,
+                            })
+                        }
+                    }
                 }
             }
         }
@@ -149,12 +247,40 @@ impl Client {
     pub async fn all_prompts(&self) -> Result<Vec<PeerPrompt>, Error> {
         let mut res = vec![];
         for peer in &self.peers {
-            if peer.capabilities.prompts.is_some() {
-                for prompt in peer.list_prompts().await? {
-                    res.push(PeerPrompt {
-                        peer: peer.clone(),
-                        prompt,
-                    })
+            match peer {
+                Peer::Local {
+                    name: _,
+                    description: _,
+                    cmd: _,
+                    args: _,
+                    env: _,
+                    capabilities,
+                    client: _,
+                } => {
+                    if capabilities.prompts.is_some() {
+                        for prompt in peer.list_prompts().await? {
+                            res.push(PeerPrompt {
+                                peer: peer.clone(),
+                                prompt,
+                            })
+                        }
+                    }
+                }
+                Peer::Remote {
+                    name: _,
+                    description: _,
+                    url: _,
+                    capabilities,
+                    client: _,
+                } => {
+                    if capabilities.prompts.is_some() {
+                        for prompt in peer.list_prompts().await? {
+                            res.push(PeerPrompt {
+                                peer: peer.clone(),
+                                prompt,
+                            })
+                        }
+                    }
                 }
             }
         }
