@@ -1,6 +1,6 @@
 [package]
 name = "mcp-commune"
-version = "0.3.2"
+version = "0.4.0"
 edition = "2021"
 description = "Rust client and server for building discoverable Model Context Protocol (MCP) networks"
 license = "MIT"
@@ -15,7 +15,7 @@ aws-sdk-bedrockruntime = "1.69.0"
 aws-smithy-types = "1.2.12"
 futures = "0.3.31"
 log = "0.4.25"
-mcp-sdk-rs = "0.1.4"
+mcp-sdk-rs = "0.2.0"
 serde = "1.0.217"
 serde_json = "1.0.135"
 tokio = { version = "1.43.0", features = ["full"] }
