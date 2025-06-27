@@ -51,29 +51,15 @@ impl LocalPeerBuilder {
         self
     }
     pub async fn build(self) -> Result<Peer, Error> {
-        log::info!(
-            "CMD: {:?}, ARGS: {:?}, ENV: {:?}",
-            self.cmd,
-            self.args,
-            self.env
-        );
         let mut command = Command::new(self.cmd.clone());
         command.args(self.args.clone());
         command.envs(self.env.clone());
         command.stdin(Stdio::piped());
         command.stdout(Stdio::piped());
-
-        let output = command.spawn().unwrap().wait_with_output().await.unwrap();
-        log::info!("COMMAND OUTPUT: {:#?}", output);
-        log::info!("Command: {:#?}", command);
         let (request_tx, request_rx): (UnboundedSender<Message>, UnboundedReceiver<Message>) =
             tokio::sync::mpsc::unbounded_channel();
         let (response_tx, response_rx): (UnboundedSender<Message>, UnboundedReceiver<Message>) =
             tokio::sync::mpsc::unbounded_channel();
-
-        // let transport = StdioTransport::new(child.stdin.unwrap(), child.stdout.unwrap());
-        // use sender instead of response_tx?
-
         let session = Session::Local {
             handler: None,
             command: command,
@@ -82,7 +68,6 @@ impl LocalPeerBuilder {
         };
         log::info!("starting local session");
         session.start().await.map_err(|_| Error::Internal)?;
-
         let client = McpClient::new(request_tx, response_rx);
         let implementation = Implementation {
             // name: self.name.clone(),
