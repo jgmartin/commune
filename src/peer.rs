@@ -66,7 +66,6 @@ impl LocalPeerBuilder {
             receiver: Arc::new(Mutex::new(request_rx)),
             sender: Arc::new(response_tx),
         };
-        log::info!("starting local session");
         session.start().await.map_err(|_| Error::Internal)?;
         let client = McpClient::new(request_tx, response_rx);
         let implementation = Implementation {
