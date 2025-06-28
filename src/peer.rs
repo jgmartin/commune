@@ -69,7 +69,6 @@ impl LocalPeerBuilder {
         session.start().await.map_err(|_| Error::Internal)?;
         let client = McpClient::new(request_tx, response_rx);
         let implementation = Implementation {
-            // name: self.name.clone(),
             name: "commune".to_string(),
             version: env!("CARGO_PKG_VERSION").to_string(),
         };
@@ -134,7 +133,6 @@ impl RemotePeerBuilder {
         session.start().await.map_err(|_| Error::Internal)?;
         let client = McpClient::new(request_tx, response_rx);
         let implementation = Implementation {
-            // name: self.name.clone(),
             name: "commune".to_string(),
             version: env!("CARGO_PKG_VERSION").to_string(),
         };
@@ -158,7 +156,7 @@ impl RemotePeerBuilder {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Peer {
     Local {
         name: String,

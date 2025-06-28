@@ -5,7 +5,7 @@ pub use mcp_sdk_rs::Tool as McpTool;
 use serde_json::Value;
 use std::{collections::HashMap, fmt};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Executor {
     Fn(fn(Option<Value>) -> Result<String, Error>),
     Cmd {
@@ -14,7 +14,7 @@ pub enum Executor {
     },
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Tool {
     Local { executor: Executor, tool: McpTool },
     Remote { peer: Peer, tool: McpTool },
