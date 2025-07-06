@@ -257,7 +257,6 @@ impl Peer {
                             .await
                             .map_err(|e| Error::McpClient(format!("{e}")))?;
                         if let Some(content) = val.get("content") {
-                            log::debug!("content from tool response: {:#?}", content);
                             match content {
                                 Value::Array(c) => {
                                     if let Some(v) = c.first() {
@@ -304,7 +303,27 @@ impl Peer {
                             )
                             .await
                             .map_err(|e| Error::McpClient(format!("{e}")))?;
-                        Ok(serde_json::from_value(val).expect("mcp formatted tool output"))
+                        if let Some(content) = val.get("content") {
+                            match content {
+                                Value::Array(c) => {
+                                    if let Some(v) = c.first() {
+                                        Ok(serde_json::from_value(v.clone())
+                                            .expect("mcp formatted tool output"))
+                                    } else {
+                                        Err(Error::McpClient("invalid tool response".to_string()))
+                                    }
+                                }
+                                Value::Object(c) => {
+                                    let val = serde_json::to_value(c)
+                                        .expect("a serializable tool result");
+                                    Ok(serde_json::from_value(val)
+                                        .expect("mcp formatted tool output"))
+                                }
+                                _ => Err(Error::McpClient("invalid tool response".to_string())),
+                            }
+                        } else {
+                            Err(Error::McpClient("invalid tool response".to_string()))
+                        }
                     } else {
                         Err(Error::UninitializedClient)
                     }
