@@ -4,8 +4,8 @@ use mcp_sdk_rs::{
     session::Session,
     transport::{websocket::WebSocketTransport, Message},
     types::ServerCapabilities,
-    Implementation, LoggingLevel, Prompt, PromptMessage, Resource, ResourceContents,
-    ResourceTemplate, Tool,
+    Implementation, LoggingLevel, MessageContent, Prompt, PromptMessage, Resource,
+    ResourceContents, ResourceTemplate, Tool,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -229,7 +229,11 @@ impl Peer {
         }
     }
     /// Call a tool
-    pub async fn call_tool(&self, name: &str, params: Option<Value>) -> Result<Value, Error> {
+    pub async fn call_tool(
+        &self,
+        name: &str,
+        params: Option<Value>,
+    ) -> Result<MessageContent, Error> {
         match self {
             Peer::Local {
                 name: _,
@@ -242,15 +246,37 @@ impl Peer {
             } => {
                 if capabilities.tools.is_some() {
                     if let Some(c) = &client {
-                        c.request(
-                            "tools/call",
-                            Some(json!({
-                                "name": name,
-                                "arguments": params.unwrap_or(json!({}))
-                            })),
-                        )
-                        .await
-                        .map_err(|e| Error::McpClient(format!("{e}")))
+                        let val = c
+                            .request(
+                                "tools/call",
+                                Some(json!({
+                                    "name": name,
+                                    "arguments": params.unwrap_or(json!({}))
+                                })),
+                            )
+                            .await
+                            .map_err(|e| Error::McpClient(format!("{e}")))?;
+                        if let Some(content) = val.get("content") {
+                            match content {
+                                Value::Array(c) => {
+                                    if let Some(v) = c.first() {
+                                        Ok(serde_json::from_value(v.clone())
+                                            .expect("mcp formatted tool output"))
+                                    } else {
+                                        Err(Error::McpClient("invalid tool response".to_string()))
+                                    }
+                                }
+                                Value::Object(c) => {
+                                    let val = serde_json::to_value(c)
+                                        .expect("a serializable tool result");
+                                    Ok(serde_json::from_value(val)
+                                        .expect("mcp formatted tool output"))
+                                }
+                                _ => Err(Error::McpClient("invalid tool response".to_string())),
+                            }
+                        } else {
+                            Err(Error::McpClient("invalid tool response".to_string()))
+                        }
                     } else {
                         Err(Error::UninitializedClient)
                     }
@@ -267,15 +293,37 @@ impl Peer {
             } => {
                 if capabilities.tools.is_some() {
                     if let Some(c) = &client {
-                        c.request(
-                            "tools/call",
-                            Some(json!({
-                                "name": name,
-                                "arguments": params.unwrap_or(json!({}))
-                            })),
-                        )
-                        .await
-                        .map_err(|e| Error::McpClient(format!("{e}")))
+                        let val = c
+                            .request(
+                                "tools/call",
+                                Some(json!({
+                                    "name": name,
+                                    "arguments": params.unwrap_or(json!({}))
+                                })),
+                            )
+                            .await
+                            .map_err(|e| Error::McpClient(format!("{e}")))?;
+                        if let Some(content) = val.get("content") {
+                            match content {
+                                Value::Array(c) => {
+                                    if let Some(v) = c.first() {
+                                        Ok(serde_json::from_value(v.clone())
+                                            .expect("mcp formatted tool output"))
+                                    } else {
+                                        Err(Error::McpClient("invalid tool response".to_string()))
+                                    }
+                                }
+                                Value::Object(c) => {
+                                    let val = serde_json::to_value(c)
+                                        .expect("a serializable tool result");
+                                    Ok(serde_json::from_value(val)
+                                        .expect("mcp formatted tool output"))
+                                }
+                                _ => Err(Error::McpClient("invalid tool response".to_string())),
+                            }
+                        } else {
+                            Err(Error::McpClient("invalid tool response".to_string()))
+                        }
                     } else {
                         Err(Error::UninitializedClient)
                     }

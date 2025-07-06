@@ -1,13 +1,13 @@
 use crate::{error::Error, peer::Peer};
 use aws_sdk_bedrockruntime::types::{ToolInputSchema, ToolSpecification};
 use aws_smithy_types::Document;
-pub use mcp_sdk_rs::Tool as McpTool;
+pub use mcp_sdk_rs::{MessageContent, Tool as McpTool};
 use serde_json::Value;
 use std::{collections::HashMap, fmt};
 
 #[derive(Clone, Debug)]
 pub enum Executor {
-    Fn(fn(Option<Value>) -> Result<String, Error>),
+    Fn(fn(Option<Value>) -> Result<MessageContent, Error>),
     Cmd {
         cmd: String,
         args: Option<Vec<String>>,
