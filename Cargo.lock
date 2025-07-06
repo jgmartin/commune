@@ -1048,9 +1048,9 @@ dependencies = [
 
 [[package]]
 name = "mcp-sdk-rs"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3be4c0afcea0162c4cfd1460759981afef3cef647704fe520e0898eb7ed4b60"
+checksum = "261f395bd1b39ce4edea982c0c998d5442dbf6763b3bae7b76c88d6f17794b84"
 dependencies = [
  "async-trait",
  "base64",
