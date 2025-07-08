@@ -3,7 +3,7 @@ use aws_sdk_bedrockruntime::types::{ToolInputSchema, ToolSpecification};
 use aws_smithy_types::Document;
 pub use mcp_sdk_rs::{MessageContent, Tool as McpTool, ToolResult};
 use serde_json::Value;
-use std::{collections::HashMap, fmt};
+use std::fmt;
 
 #[derive(Clone, Debug)]
 pub enum Executor {
@@ -29,96 +29,59 @@ impl fmt::Display for Tool {
 }
 impl From<Tool> for ToolSpecification {
     fn from(tool: Tool) -> ToolSpecification {
-        let mut properties = HashMap::new();
-        let mut required = vec![];
         let name: String;
         let description: String;
+        let mut input_schema: std::collections::HashMap<String, Document> =
+            std::collections::HashMap::default();
+        input_schema.insert(
+            "properties".to_string(),
+            Document::Object(std::collections::HashMap::default()),
+        );
+        input_schema.insert("required".to_string(), Document::Array(vec![]));
         match tool {
             Tool::Remote { peer: _, tool } => {
                 name = tool.name.clone();
                 description = tool.description.clone();
-
-                if let Some(is) = tool.input_schema {
-                    if let Some(p) = is.properties {
-                        if let Some(args_obj) = p.as_object() {
-                            for (arg_name, val) in args_obj {
-                                if let Some(schema_obj) = val.as_object() {
-                                    properties
-                                        .insert(arg_name.clone(), Document::Object(HashMap::new()));
-                                    for (_, val) in schema_obj {
-                                        if let Some(props_obj) = val.as_object() {
-                                            if let Some(t) = props_obj.get("type") {
-                                                if let Some(st) = t.as_str() {
-                                                    if let Some(arg_props) =
-                                                        properties.get_mut(arg_name)
-                                                    {
-                                                        if let Some(p) = arg_props.as_object_mut() {
-                                                            p.insert(
-                                                                "type".to_string(),
-                                                                Document::String(st.to_string()),
-                                                            );
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                if let Some(schema) = &tool.input_schema {
+                    if let Some(props) = &schema.properties {
+                        let props_val =
+                            serde_json::to_value(props).expect("a serializable tool schema");
+                        let props_doc: Document =
+                            serde_json::from_value(props_val).expect("a valid tool schema");
+                        input_schema.insert("properties".to_string(), props_doc);
                     }
-                    if let Some(r) = is.required {
-                        for val in r {
-                            required.push(Document::String(val))
-                        }
+                    if let Some(req) = &schema.required {
+                        let required_val =
+                            serde_json::to_value(req).expect("serializable required params");
+                        let required_doc: Document = serde_json::from_value(required_val)
+                            .expect("valid required parameters");
+                        input_schema.insert("required".to_string(), required_doc);
                     }
                 }
             }
             Tool::Local { executor: _, tool } => {
                 name = tool.name.clone();
                 description = tool.description.clone();
-                if let Some(is) = tool.input_schema {
-                    if let Some(p) = is.properties {
-                        if let Some(args_obj) = p.as_object() {
-                            for (arg_name, val) in args_obj {
-                                if let Some(schema_obj) = val.as_object() {
-                                    properties
-                                        .insert(arg_name.clone(), Document::Object(HashMap::new()));
-                                    for (_, val) in schema_obj {
-                                        if let Some(props_obj) = val.as_object() {
-                                            if let Some(t) = props_obj.get("type") {
-                                                if let Some(st) = t.as_str() {
-                                                    if let Some(arg_props) =
-                                                        properties.get_mut(arg_name)
-                                                    {
-                                                        if let Some(p) = arg_props.as_object_mut() {
-                                                            p.insert(
-                                                                "type".to_string(),
-                                                                Document::String(st.to_string()),
-                                                            );
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                if let Some(schema) = &tool.input_schema {
+                    if let Some(props) = &schema.properties {
+                        let props_val =
+                            serde_json::to_value(props).expect("a serializable tool schema");
+                        let props_doc: Document =
+                            serde_json::from_value(props_val).expect("a valid tool schema");
+                        input_schema.insert("properties".to_string(), props_doc);
                     }
-                    if let Some(r) = is.required {
-                        for val in r {
-                            required.push(Document::String(val))
-                        }
+                    if let Some(req) = &schema.required {
+                        let required_val =
+                            serde_json::to_value(req).expect("serializable required params");
+                        let required_doc: Document = serde_json::from_value(required_val)
+                            .expect("valid required parameters");
+                        input_schema.insert("required".to_string(), required_doc);
                     }
                 }
             }
         }
-        let input_schema_doc = Document::Object(HashMap::<String, Document>::from([
-            ("type".into(), Document::String("object".into())),
-            ("properties".into(), Document::Object(properties)),
-            ("required".into(), Document::Array(required)),
-        ]));
+        input_schema.insert("type".to_string(), Document::String("object".to_string()));
+        let input_schema_doc = Document::from(input_schema);
         ToolSpecification::builder()
             .set_name(Some(name))
             .set_description(Some(description))
