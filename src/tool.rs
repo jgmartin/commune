@@ -3,15 +3,53 @@ use aws_sdk_bedrockruntime::types::{ToolInputSchema, ToolSpecification};
 use aws_smithy_types::Document;
 pub use mcp_sdk_rs::{MessageContent, Tool as McpTool, ToolResult};
 use serde_json::Value;
-use std::fmt;
+use std::{fmt, future::Future, pin::Pin, sync::Arc};
 
-#[derive(Clone, Debug)]
+// Type alias for async function executor
+type AsyncExecutorFn = Arc<dyn Fn(Option<Value>) -> Pin<Box<dyn Future<Output = Result<MessageContent, Error>> + Send>> + Send + Sync>;
+
+#[derive(Clone)]
 pub enum Executor {
-    Fn(fn(Option<Value>) -> Result<MessageContent, Error>),
+    Fn(AsyncExecutorFn),
     Cmd {
         cmd: String,
         args: Option<Vec<String>>,
     },
+}
+
+impl fmt::Debug for Executor {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Executor::Fn(_) => write!(f, "Executor::Fn(<async function>)"),
+            Executor::Cmd { cmd, args } => f.debug_struct("Cmd")
+                .field("cmd", cmd)
+                .field("args", args)
+                .finish(),
+        }
+    }
+}
+
+/// Helper function to convert a synchronous function to an async executor
+pub fn sync_fn_executor(
+    func: fn(&Option<Value>) -> Result<MessageContent, Error>,
+) -> Executor {
+    let async_fn = Arc::new(move |params: Option<Value>| {
+        let result = func(&params);
+        Box::pin(async move { result }) as Pin<Box<dyn Future<Output = Result<MessageContent, Error>> + Send>>
+    });
+    Executor::Fn(async_fn)
+}
+
+/// Helper function to create an async function executor
+pub fn async_fn_executor<F, Fut>(func: F) -> Executor
+where
+    F: Fn(Option<Value>) -> Fut + Send + Sync + 'static,
+    Fut: Future<Output = Result<MessageContent, Error>> + Send + 'static,
+{
+    let async_fn = Arc::new(move |params: Option<Value>| {
+        Box::pin(func(params)) as Pin<Box<dyn Future<Output = Result<MessageContent, Error>> + Send>>
+    });
+    Executor::Fn(async_fn)
 }
 
 #[derive(Clone, Debug)]
