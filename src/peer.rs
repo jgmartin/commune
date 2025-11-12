@@ -130,7 +130,10 @@ impl RemotePeerBuilder {
             sender: Arc::new(response_tx),
         };
         // let session = Session::new(Arc::new(transport), response_tx, request_rx, None);
-        session.start().await.map_err(|_| Error::Internal)?;
+        session
+            .start()
+            .await
+            .map_err(|_| Error::ClientInitialization)?;
         let client = McpClient::new(request_tx, response_rx);
         let implementation = Implementation {
             name: "commune".to_string(),
